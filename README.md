@@ -8,6 +8,25 @@ Built to explore systems-level backend engineering directly with OS primitives -
 
 ## Architecture
 
+```mermaid
+graph TD
+    Client((Client)) -->|TCP Connection| Socket[Socket Server]
+    Socket -->|Raw Data| Parser[RESP Protocol Parser]
+    Parser -->|Parsed Command| ThreadPool{Thread Pool Worker}
+    
+    ThreadPool -->|Read Command| ReadLock[Shared Read Lock]
+    ThreadPool -->|Write Command| WriteLock[Exclusive Write Lock]
+    
+    ReadLock --> Store[(In-Memory Key-Value Store)]
+    WriteLock --> Store
+    
+    WriteLock --> AOF[Append-Only File]
+    WriteLock --> Repl[Master-Replica Sync]
+    
+    Store -.->|TTL Thread| Eviction[Active Eviction]
+    Store -.->|Fork| BGSAVE[RDB Snapshot]
+```
+
 ### RESP Protocol Parser
 
 Implements the REdis Serialization Protocol (RESP) with a stateful accumulation buffer per client connection, handling partial TCP reads correctly. Commands are parsed as binary-safe bulk string arrays.

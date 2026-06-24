@@ -1,0 +1,21 @@
+services:
+  server:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: mini-redis-server
+    ports:
+      - "6379:6379"
+    restart: "no"
+
+  benchmark:
+    image: python:3.10-slim
+    container_name: mini-redis-benchmark
+    depends_on:
+      - server
+    volumes:
+      - ./client:/app
+    working_dir: /app
+    environment:
+      - REDIS_HOST=server
+    command: python benchmark.py
